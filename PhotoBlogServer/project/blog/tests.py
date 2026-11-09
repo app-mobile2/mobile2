@@ -32,6 +32,16 @@ class PostAPITests(APITestCase):
         self.key = Token.objects.create(user=self.user).key
         self.url = "/api_root/Post/"
 
+    def test_detector_token_login(self):
+        invalid = self.client.post("/api-token-auth/", {"username": "tester", "password": "wrong"})
+        self.assertEqual(invalid.status_code, 400)
+        login = self.client.post("/api-token-auth/", {"username": "tester", "password": "test-password"})
+        self.assertEqual(login.status_code, 200)
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + login.data["token"])
+        response = self.client.post(self.url, {"title": "person", "image": photo()}, format="multipart")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["author"], self.user.pk)
+
     def authorize(self):
         self.client.credentials(HTTP_AUTHORIZATION="Token " + self.key)
 
